@@ -1,0 +1,22 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Vector store (regeneratable from docs/)
+chroma_db/
+
+# Evaluation outputs
+eval/results/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

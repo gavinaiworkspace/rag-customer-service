@@ -1,0 +1,31 @@
+# Core LangChain stack — pinned to the 0.3.x line so we don't accidentally
+# get pulled into the LangChain 1.x rewrite (which requires langchain-core>=1.0
+# and would force langchain-chroma>=1.0 too).
+langchain>=0.3.27,<0.4
+langchain-core>=0.3.78,<0.4
+langchain-openai>=0.3.34,<0.4
+langchain-community>=0.3.27,<0.4
+langchain-text-splitters>=0.3.0,<0.4
+
+# Vector store integration — must stay on 0.2.x; 1.x requires langchain-core 1.x.
+langchain-chroma~=0.2.6
+
+# Vector DB
+chromadb>=1.0,<2.0
+
+# OpenAI client + token counting
+openai>=1.40,<3.0
+tiktoken>=0.7
+
+# Loaders / config
+python-dotenv>=1.0
+pypdf>=4.0,<7.0
+
+# UI (used in later milestone)
+streamlit>=1.30
+
+# Evaluation (used in later milestone)
+ragas>=0.2,<1.0
+datasets>=2.15
+matplotlib>=3.8
+pandas>=2.0,<4.0
