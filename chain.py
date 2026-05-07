@@ -1,33 +1,61 @@
-"""RAG chain: retrieve top-K chunks from Chroma, generate a grounded answer with the v1 prompt.
+"""RAG chain: retrieve top-K chunks from Chroma, generate a grounded answer.
 
 Library use (for the future Streamlit UI / eval harness):
 
     from chain import build_chain, get_retriever
-    chain = build_chain()
+    chain = build_chain()                        # defaults to v1
+    chain = build_chain(prompt_version="v2")     # use a specific version
     answer = chain.invoke("What vehicles do you have?")
 
 CLI smoke test:
 
     python chain.py "What vehicles do you have?"
-    python chain.py                # uses the default sample question
+    python chain.py "What vehicles do you have?" --prompt v2
+    python chain.py                # uses the default question with v1
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
+from typing import Literal
 
 import tiktoken
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 import config
-from prompts.v1_baseline import PROMPT
+
+PromptVersion = Literal["v1", "v2", "v3", "v4", "v5"]
+SUPPORTED_VERSIONS: tuple[str, ...] = ("v1", "v2", "v3", "v4", "v5")
+
+
+def _load_prompt(version: str) -> ChatPromptTemplate:
+    """Import and return the PROMPT object for the requested version."""
+    if version == "v1":
+        from prompts.v1_baseline import PROMPT
+    elif version == "v2":
+        from prompts.v2_cot import PROMPT
+    elif version == "v3":
+        from prompts.v3_fewshot import PROMPT
+    elif version == "v4":
+        from prompts.v4_guardrails import PROMPT
+    elif version == "v5":
+        from prompts.v5_optimised import PROMPT
+    else:
+        raise ValueError(
+            f"Unknown prompt version '{version}'. "
+            f"Choose from: {', '.join(SUPPORTED_VERSIONS)}"
+        )
+    return PROMPT
 
 DEFAULT_QUESTION = "What services do you offer?"
+DEFAULT_PROMPT_VERSION = "v1"
 
 
 def _ensure_chroma_dir() -> None:
@@ -69,8 +97,8 @@ def format_docs(docs: list[Document]) -> str:
     return "\n\n".join(blocks)
 
 
-def build_chain() -> Runnable:
-    """Compose the LCEL chain: retrieve -> format context -> v1 prompt -> LLM -> string."""
+def build_chain(prompt_version: str = DEFAULT_PROMPT_VERSION) -> Runnable:
+    """Compose the LCEL chain: retrieve -> format context -> prompt -> LLM -> string."""
     config.require_api_key()
 
     retriever = get_retriever()
@@ -79,23 +107,24 @@ def build_chain() -> Runnable:
         temperature=config.LLM_TEMPERATURE,
         api_key=config.OPENAI_API_KEY,
     )
+    prompt = _load_prompt(prompt_version)
 
     return (
         {
             "context": retriever | format_docs,
             "question": RunnablePassthrough(),
         }
-        | PROMPT
+        | prompt
         | llm
         | StrOutputParser()
     )
 
 
-def build_chain_with_sources() -> Runnable:
-    """Same chain as build_chain() but also exposes the retrieved docs in the output.
+def build_chain_with_sources(prompt_version: str = DEFAULT_PROMPT_VERSION) -> Runnable:
+    """Same as build_chain() but also exposes retrieved docs in the output.
 
     Returns a runnable whose output dict has keys: 'answer', 'context_docs', 'context_text'.
-    Used by the CLI smoke test so we can show the user which sources were retrieved.
+    Used by the CLI smoke test so we can show which sources were retrieved.
     """
     config.require_api_key()
 
@@ -105,6 +134,7 @@ def build_chain_with_sources() -> Runnable:
         temperature=config.LLM_TEMPERATURE,
         api_key=config.OPENAI_API_KEY,
     )
+    prompt = _load_prompt(prompt_version)
 
     retrieve_step = RunnableParallel(
         question=RunnablePassthrough(),
@@ -119,7 +149,7 @@ def build_chain_with_sources() -> Runnable:
             "context": lambda s: s["context_text"],
             "question": lambda s: s["question"],
         }
-        | PROMPT
+        | prompt
         | llm
         | StrOutputParser()
     )
@@ -139,9 +169,10 @@ def _count_tokens(text: str, model: str) -> int:
     return len(encoding.encode(text))
 
 
-def _cli(question: str) -> int:
-    chain = build_chain_with_sources()
-    print(f"Question: {question}\n")
+def _cli(question: str, prompt_version: str = DEFAULT_PROMPT_VERSION) -> int:
+    chain = build_chain_with_sources(prompt_version)
+    print(f"Prompt version : {prompt_version}")
+    print(f"Question       : {question}\n")
 
     result = chain.invoke(question)
     docs: list[Document] = result["context_docs"]
@@ -171,5 +202,14 @@ def _cli(question: str) -> int:
 
 
 if __name__ == "__main__":
-    q = " ".join(sys.argv[1:]).strip() or DEFAULT_QUESTION
-    sys.exit(_cli(q))
+    parser = argparse.ArgumentParser(description="Query the Chauffeur For All RAG pipeline.")
+    parser.add_argument("question", nargs="*", help="Question to ask (default: sample question)")
+    parser.add_argument(
+        "--prompt",
+        choices=SUPPORTED_VERSIONS,
+        default=DEFAULT_PROMPT_VERSION,
+        help="Prompt version to use (default: v1)",
+    )
+    args = parser.parse_args()
+    question = " ".join(args.question).strip() or DEFAULT_QUESTION
+    sys.exit(_cli(question, args.prompt))

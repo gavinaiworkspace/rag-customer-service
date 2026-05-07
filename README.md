@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ### 2. Configure your API key
 
-Copy `.env.example` to `.env` and paste your OpenAI key:
+Create `.env` and paste your OpenAI key:
 
 ```
 OPENAI_API_KEY=sk-...
