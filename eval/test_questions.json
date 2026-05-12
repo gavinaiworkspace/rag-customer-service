@@ -1,0 +1,86 @@
+[
+  {
+    "id": "q01_services",
+    "category": "straightforward_factual",
+    "question": "What chauffeur services do you offer?",
+    "ground_truth": "Chauffeur For All offers Sydney-wide airport transfers, corporate chauffeur services, wedding car hire with bridal-party packages, special-event transport for galas, formals, concerts and private functions, hourly hire with drivers on standby, and private tours of Sydney."
+  },
+  {
+    "id": "q02_fleet",
+    "category": "straightforward_factual",
+    "question": "What vehicles do you offer?",
+    "ground_truth": "The fleet includes Tesla Model 3, Lexus ES Executive Sedan, Audi Q7 SUV, Lexus RX, Mercedes-Benz S-Class, BMW 7 Series, Mercedes-Benz V-Class, Toyota Alphard, and Mercedes Sprinter luxury minibus."
+  },
+  {
+    "id": "q03_vehicle_capacity",
+    "category": "straightforward_factual",
+    "question": "Which vehicles can carry up to 7 passengers?",
+    "ground_truth": "The Mercedes-Benz V-Class luxury van and Toyota Alphard luxury van can each carry up to 7 passengers."
+  },
+  {
+    "id": "q04_airport_pricing",
+    "category": "pricing",
+    "question": "How much is an airport transfer?",
+    "ground_truth": "Airport transfers start from $120 one-way within the metropolitan area. The price is indicative only."
+  },
+  {
+    "id": "q05_hourly_pricing",
+    "category": "pricing",
+    "question": "How much does hourly chauffeur hire cost and is there a minimum booking?",
+    "ground_truth": "Hourly chauffeur hire starts from $110 per hour with a two-hour minimum booking."
+  },
+  {
+    "id": "q06_tour_pricing",
+    "category": "pricing",
+    "question": "What is the starting price for a private Sydney tour?",
+    "ground_truth": "Private tour bookings start from $750 for a half day."
+  },
+  {
+    "id": "q07_cancellation_policy",
+    "category": "policy",
+    "question": "What's your cancellation policy?",
+    "ground_truth": "Cancellations are free up to 48 hours before the booking. Cancellations within 24 hours incur a 50% fee. No shows and cancellations within 4 hours are charged the full fare."
+  },
+  {
+    "id": "q08_booking_policy",
+    "category": "policy",
+    "question": "How far in advance do I need to book and how can I book?",
+    "ground_truth": "Bookings can be made online or by phone at least 24 hours in advance."
+  },
+  {
+    "id": "q09_time_change_policy",
+    "category": "policy",
+    "question": "Is there a fee if I change my booking time on the same day?",
+    "ground_truth": "A same-day time change within 2 hours incurs a $50 fee."
+  },
+  {
+    "id": "q10_wedding_package",
+    "category": "multi_detail",
+    "question": "What's included in the wedding package?",
+    "ground_truth": "The documents state that Chauffeur For All offers wedding car hire with bridal-party packages. They do not specify detailed inclusions, so the assistant should say it does not have those details and offer to connect the customer with the team."
+  },
+  {
+    "id": "q11_large_group",
+    "category": "multi_detail",
+    "question": "We have 16 passengers for a gala. Which service and vehicle would fit?",
+    "ground_truth": "For a gala, Chauffeur For All offers special-event transport. The Mercedes Sprinter luxury minibus can carry up to 16 passengers."
+  },
+  {
+    "id": "q12_service_area_central_coast",
+    "category": "edge_case",
+    "question": "Do you service the Central Coast?",
+    "ground_truth": "The documents say Chauffeur For All services all metropolitan suburbs and surrounding regional areas within 100 km, and that long-distance and interstate transfers are available. They do not name the Central Coast specifically, so the assistant should avoid confirming it by name and offer to check with the team."
+  },
+  {
+    "id": "q13_interstate",
+    "category": "edge_case",
+    "question": "Can I book an interstate transfer?",
+    "ground_truth": "Yes. Long-distance and interstate transfers are available."
+  },
+  {
+    "id": "q14_restaurant",
+    "category": "off_topic",
+    "question": "Can you recommend a restaurant in Sydney?",
+    "ground_truth": "The assistant should decline to recommend a restaurant because the business documents do not contain restaurant recommendations, and should offer to help with chauffeur or transport questions instead."
+  }
+]
