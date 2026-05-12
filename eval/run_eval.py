@@ -10,7 +10,7 @@ Prerequisites:
 Outputs:
     eval/results/ragas_per_question_scores.csv
     eval/results/ragas_summary_scores.csv
-    eval/results/ragas_v1_v2_comparison.png
+    eval/results/ragas_prompt_comparison.png
 """
 
 from __future__ import annotations
@@ -35,7 +35,8 @@ if str(PROJECT_ROOT) not in sys.path:
 import config  # noqa: E402
 from chain import build_chain_with_sources  # noqa: E402
 
-DEFAULT_PROMPT_VERSIONS = ("v1", "v2")
+SUPPORTED_PROMPT_VERSIONS = ("v1", "v2", "v3", "v4", "v5")
+DEFAULT_PROMPT_VERSIONS = SUPPORTED_PROMPT_VERSIONS
 DEFAULT_QUESTIONS_PATH = Path(__file__).with_name("test_questions.json")
 DEFAULT_OUTPUT_DIR = Path(__file__).with_name("results")
 METADATA_COLUMNS = {
@@ -48,6 +49,22 @@ METADATA_COLUMNS = {
     "ground_truth",
     "source_files",
 }
+OUTPUT_METADATA_COLUMNS = [
+    "id",
+    "category",
+    "prompt_version",
+    "question",
+    "answer",
+    "ground_truth",
+    "source_files",
+]
+
+
+def clean_csv_text(value: Any) -> Any:
+    """Collapse whitespace in long text fields so CSV rows stay one line."""
+    if not isinstance(value, str):
+        return value
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def _load_metrics() -> list[Any]:
@@ -184,10 +201,17 @@ def evaluate_rows(rows: list[dict[str, Any]]) -> pd.DataFrame:
     )
     scores = result.to_pandas()
 
-    metadata = pd.DataFrame(rows).drop(columns=["contexts"])
-    scores = scores.drop(columns=list(metadata.columns), errors="ignore")
+    metadata = pd.DataFrame(rows)[OUTPUT_METADATA_COLUMNS].map(clean_csv_text)
+    metric_columns = [
+        column
+        for column in scores.columns
+        if pd.api.types.is_numeric_dtype(scores[column])
+    ]
     scores = pd.concat(
-        [metadata.reset_index(drop=True), scores.reset_index(drop=True)],
+        [
+            metadata.reset_index(drop=True),
+            scores[metric_columns].reset_index(drop=True),
+        ],
         axis=1,
     )
 
@@ -198,7 +222,7 @@ def summarise_scores(per_question_scores: pd.DataFrame) -> pd.DataFrame:
     metric_columns = [
         column
         for column in per_question_scores.columns
-        if column not in METADATA_COLUMNS
+        if column not in OUTPUT_METADATA_COLUMNS
         and pd.api.types.is_numeric_dtype(per_question_scores[column])
     ]
 
@@ -214,8 +238,8 @@ def summarise_scores(per_question_scores: pd.DataFrame) -> pd.DataFrame:
 
 def write_comparison_chart(summary_scores: pd.DataFrame, output_path: Path) -> None:
     chart_data = summary_scores.set_index("prompt_version").T
-    ax = chart_data.plot(kind="bar", figsize=(10, 6), rot=30)
-    ax.set_title("RAGAS Comparison: v1 Baseline vs v2 Chain-of-Thought")
+    ax = chart_data.plot(kind="bar", figsize=(12, 6), rot=30)
+    ax.set_title("RAGAS Comparison Across Prompt Versions")
     ax.set_xlabel("Metric")
     ax.set_ylabel("Average score")
     ax.set_ylim(0, 1)
@@ -227,7 +251,7 @@ def write_comparison_chart(summary_scores: pd.DataFrame, output_path: Path) -> N
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate v1 and v2 RAG prompts with RAGAS.")
+    parser = argparse.ArgumentParser(description="Evaluate RAG prompt versions with RAGAS.")
     parser.add_argument(
         "--questions",
         type=Path,
@@ -244,8 +268,8 @@ def parse_args() -> argparse.Namespace:
         "--prompt-versions",
         nargs="+",
         default=DEFAULT_PROMPT_VERSIONS,
-        choices=("v1", "v2"),
-        help="Prompt versions to evaluate.",
+        choices=SUPPORTED_PROMPT_VERSIONS,
+        help="Prompt versions to evaluate. Defaults to v1 v2 v3 v4 v5.",
     )
     return parser.parse_args()
 
@@ -264,7 +288,7 @@ def main() -> int:
 
     per_question_path = output_dir / "ragas_per_question_scores.csv"
     summary_path = output_dir / "ragas_summary_scores.csv"
-    chart_path = output_dir / "ragas_v1_v2_comparison.png"
+    chart_path = output_dir / "ragas_prompt_comparison.png"
 
     per_question_scores.to_csv(per_question_path, index=False)
     summary_scores.to_csv(summary_path, index=False)

@@ -74,16 +74,85 @@ to ground the model's identity more precisely.
 
 ## v3 — Few-Shot Examples (`prompts/v3_fewshot.py`)
 
-_To be completed after v3 is implemented and evaluated._
+### What changed from v2
+
+v3 removes the explicit reasoning block and instead adds three example
+question-answer pairs showing the desired answer style:
+
+1. A factual fleet answer.
+2. A pricing answer that keeps the "indicative only" caveat.
+3. A missing-information answer that declines to invent package inclusions.
+
+### Why this change was made
+
+The first RAGAS run showed answer relevancy was moderate and v2 did not improve
+over v1. Few-shot examples give the model concrete patterns for direct,
+customer-ready answers, which should reduce vague or padded responses.
+
+### Expected improvement
+
+| Metric | Expected change | Reasoning |
+|---|---|---|
+| Faithfulness | Slight increase | The decline example reinforces not guessing when details are absent |
+| Answer relevance | Increase | Examples demonstrate the desired level of detail and directness |
+| Context precision | Neutral | Retrieval is unchanged |
 
 ---
 
 ## v4 — Guardrails (`prompts/v4_guardrails.py`)
 
-_To be completed after v4 is implemented and evaluated._
+### What changed from v3
+
+v4 adds explicit guardrails:
+
+1. Never infer information not directly stated in the context.
+2. Do not use outside knowledge.
+3. Decline or offer escalation when the documents do not cover the question.
+4. Answer partial questions only where the context supports them.
+5. Do not confirm specific locations, inclusions, prices, or availability unless
+   directly stated.
+6. Decline off-topic requests politely.
+
+### Why this change was made
+
+Faithfulness was the largest gap in the first evaluation run. The model needs
+stronger instructions not to over-confirm edge cases such as service areas or
+unstated package inclusions.
+
+### Expected improvement
+
+| Metric | Expected change | Reasoning |
+|---|---|---|
+| Faithfulness | Increase | Hard grounding rules reduce unsupported claims |
+| Answer relevance | Slight increase | Partial-answer rules keep responses aligned with the exact question |
+| Context precision | Neutral | Retrieval is unchanged |
 
 ---
 
 ## v5 — Optimised (`prompts/v5_optimised.py`)
 
-_To be completed after v5 is implemented and evaluation results are available._
+### What changed from v4
+
+v5 combines the strongest elements from the earlier prompts:
+
+1. A short silent context-coverage checklist inspired by v2.
+2. Few-shot answer patterns from v3.
+3. Strict guardrails from v4.
+
+It avoids the verbose visible `<thinking>` format because the first evaluation
+did not show an improvement from v2 over v1.
+
+### Why this change was made
+
+The evaluation suggested the main target should be faithfulness first, with
+answer relevance second. v5 therefore prioritises strict grounding, direct
+answers, and clear declines when the retrieved documents do not contain enough
+information.
+
+### Expected improvement
+
+| Metric | Expected change | Reasoning |
+|---|---|---|
+| Faithfulness | Increase | Combines context checking with explicit no-inference rules |
+| Answer relevance | Increase | Examples and direct-answer structure keep the answer focused |
+| Context precision | Neutral | Retrieval is unchanged |
